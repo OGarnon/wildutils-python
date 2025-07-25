@@ -24,7 +24,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker Image
-        run: docker buildx build --cache-from=type=gha --cache-to=type=gha,mode=max -t wildutils-python-app:test .
+        run: docker buildx build --load --cache-from=type=gha --cache-to=type=gha,mode=max -t wildutils-python-app:test .
 
       - name: Push Docker Image (latest tag)
         run: |
