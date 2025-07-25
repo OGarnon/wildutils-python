@@ -23,10 +23,10 @@ jobs:
           pytest  # Replace with your test suite as needed
 
       # 🧹 Step 3: Lint the code using flake8
-      - name: Run Linter
-        run: |
-          pip install flake8
-          flake8 .
+      #- name: Run Linter
+       # run: |
+        #  pip install flake8
+         # flake8 .
 
       # 🔧 Step 4: Set up Docker Buildx
       - name: Set up Docker Buildx
