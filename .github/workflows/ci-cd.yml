@@ -3,32 +3,32 @@ name: CI-CD Pipeline
 on:
   push:
     branches:
-      - main  # Triggers the pipeline on push to the main branch
+      - main  # Trigger only on push to the main branch
 
 jobs:
   build-and-publish:
-    runs-on: ubuntu-latest  # Use the latest Ubuntu GitHub-hosted runner
+    runs-on: ubuntu-latest  # GitHub-hosted Ubuntu runner
 
     steps:
       # 📥 Step 1: Checkout the code from the repo
       - name: Checkout Code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Ensures full history is available (useful for tags, logs)
+          fetch-depth: 0  # Ensures full history is available (useful for logs/tags)
 
-      # 🧪 Step 2: Install dependencies and run unit tests (optional but recommended)
+      # 🧪 Step 2: Install dependencies and run tests
       - name: Install Dependencies & Run Tests
         run: |
           pip install -r requirements.txt
-          pytest  # Replace with your actual test command
+          pytest  # Replace with your test suite as needed
 
-      # 🧹 Step 3: Lint the code using flake8 (optional, for code quality)
+      # 🧹 Step 3: Lint the code using flake8
       - name: Run Linter
         run: |
           pip install flake8
-          flake8 .  # Lint all Python files
+          flake8 .
 
-      # 🔧 Step 4: Set up Docker Buildx (advanced build features like cache)
+      # 🔧 Step 4: Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -39,31 +39,34 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 🏗️ Step 6: Build the Docker image with cache and load it into Docker
+      # 🏗️ Step 6: Build the Docker image with caching
       - name: Build Docker Image
         run: |
           docker buildx build \
-            --load \  # Load image into local Docker after building
-            --cache-from=type=gha \  # Use GitHub Actions cache if available
-            --cache-to=type=gha,mode=max \  # Save build cache for future runs
-            -t wildutils-python-app:test .  # Tag image locally for testing
+            --load \
+            --cache-from=type=gha \
+            --cache-to=type=gha,mode=max \
+            -t wildutils-python-app:test .
 
-      # 📤 Step 7: Push the Docker image to Docker Hub with the "latest" tag
+      # 📤 Step 7: Push the Docker image with "latest" tag
       - name: Push Docker Image (latest tag)
         run: |
           docker tag wildutils-python-app:test ogranon/wildutils-python-app:latest
           docker push ogranon/wildutils-python-app:latest
 
-      # 🚀 Step 8: Deploy the image (adjust depending on your deployment target)    
-      - name: Deploy to Remote Server (via SSH)      
+      # 🔎 Step 8: Check if SSH key is set before deploy
+      - name: Check if Deploy Should Run
+        id: check_ssh
         run: |
           if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
-            echo "SSH_PRIVATE_KEY not set, skipping deploy."
-            exit 0
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
           fi
-          # your ssh commands here, or call ssh-action using a script
-     
-        if: secrets.SSH_PRIVATE_KEY != ''
+
+      # 🚀 Step 9: Deploy to Remote Server using SSH (only if SSH key is present)
+      - name: Deploy to Remote Server (via SSH)
+        if: steps.check_ssh.outputs.should_deploy == 'true'
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
