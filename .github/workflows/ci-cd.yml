@@ -54,9 +54,9 @@ jobs:
           docker tag wildutils-python-app:test ogranon/wildutils-python-app:latest
           docker push ogranon/wildutils-python-app:latest
 
-      # 🚀 Step 8: Deploy the image (adjust depending on your deployment target)
+      # 🚀 Step 8: Deploy the image (adjust depending on your deployment target)    
       - name: Deploy to Remote Server (via SSH)
-        if: ${{ secrets.SSH_PRIVATE_KEY != '' }}  # Only run if SSH key is provided
+        if: secrets.SSH_PRIVATE_KEY != ''
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
