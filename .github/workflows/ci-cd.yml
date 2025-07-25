@@ -3,30 +3,67 @@ name: CI-CD Pipeline
 on:
   push:
     branches:
-      - main
+      - main  # Triggers the pipeline on push to the main branch
 
 jobs:
   build-and-publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Use the latest Ubuntu GitHub-hosted runner
 
     steps:
-      - uses: actions/checkout@v3
+      # 📥 Step 1: Checkout the code from the repo
+      - name: Checkout Code
+        uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Ensures full history is available (useful for tags, logs)
 
+      # 🧪 Step 2: Install dependencies and run unit tests (optional but recommended)
+      - name: Install Dependencies & Run Tests
+        run: |
+          pip install -r requirements.txt
+          pytest  # Replace with your actual test command
+
+      # 🧹 Step 3: Lint the code using flake8 (optional, for code quality)
+      - name: Run Linter
+        run: |
+          pip install flake8
+          flake8 .  # Lint all Python files
+
+      # 🔧 Step 4: Set up Docker Buildx (advanced build features like cache)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      # 🔐 Step 5: Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # 🏗️ Step 6: Build the Docker image with cache and load it into Docker
       - name: Build Docker Image
-        run: docker buildx build --load --cache-from=type=gha --cache-to=type=gha,mode=max -t wildutils-python-app:test .
+        run: |
+          docker buildx build \
+            --load \  # Load image into local Docker after building
+            --cache-from=type=gha \  # Use GitHub Actions cache if available
+            --cache-to=type=gha,mode=max \  # Save build cache for future runs
+            -t wildutils-python-app:test .  # Tag image locally for testing
 
+      # 📤 Step 7: Push the Docker image to Docker Hub with the "latest" tag
       - name: Push Docker Image (latest tag)
         run: |
           docker tag wildutils-python-app:test ogranon/wildutils-python-app:latest
           docker push ogranon/wildutils-python-app:latest
+
+      # 🚀 Step 8: Deploy the image (adjust depending on your deployment target)
+      - name: Deploy to Remote Server (via SSH)
+        if: ${{ secrets.SSH_PRIVATE_KEY != '' }}  # Only run if SSH key is provided
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker pull ogranon/wildutils-python-app:latest
+            docker stop wildutils || true
+            docker rm wildutils || true
+            docker run -d --name wildutils -p 80:80 ogranon/wildutils-python-app:latest
