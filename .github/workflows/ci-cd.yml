@@ -65,15 +65,15 @@ jobs:
           fi
 
       # 🚀 Step 9: Deploy to Remote Server using SSH (only if SSH key is present)
-      - name: Deploy to Remote Server (via SSH)
-        if: steps.check_ssh.outputs.should_deploy == 'true'
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            docker pull ogranon/wildutils-python-app:latest
-            docker stop wildutils || true
-            docker rm wildutils || true
-            docker run -d --name wildutils -p 80:80 ogranon/wildutils-python-app:latest
+      #- name: Deploy to Remote Server (via SSH)
+       # if: steps.check_ssh.outputs.should_deploy == 'true'
+       # uses: appleboy/ssh-action@v1.0.0
+       # with:
+       #   host: ${{ secrets.SSH_HOST }}
+       #   username: ${{ secrets.SSH_USER }}
+       #   key: ${{ secrets.SSH_PRIVATE_KEY }}
+       #   script: |
+       #     docker pull ogranon/wildutils-python-app:latest
+       #     docker stop wildutils || true
+       #     docker rm wildutils || true
+       #     docker run -d --name wildutils -p 80:80 ogranon/wildutils-python-app:latest
