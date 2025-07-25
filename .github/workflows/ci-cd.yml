@@ -55,7 +55,14 @@ jobs:
           docker push ogranon/wildutils-python-app:latest
 
       # 🚀 Step 8: Deploy the image (adjust depending on your deployment target)    
-      - name: Deploy to Remote Server (via SSH)
+      - name: Deploy to Remote Server (via SSH)      
+        run: |
+          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "SSH_PRIVATE_KEY not set, skipping deploy."
+            exit 0
+          fi
+          # your ssh commands here, or call ssh-action using a script
+     
         if: secrets.SSH_PRIVATE_KEY != ''
         uses: appleboy/ssh-action@v1.0.0
         with:
