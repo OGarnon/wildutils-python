@@ -1,2 +1,4 @@
 # Only needed for extended functionality 
+black
+flake8
 pytest
