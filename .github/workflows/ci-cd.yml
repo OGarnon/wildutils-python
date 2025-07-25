@@ -4,34 +4,9 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*.*.*'
-      - 'v*'
 
 jobs:
-  build-and-tag:
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Create and Push Git Tag
-        if: env.PERSONAL_TOKEN != ''
-        env:          
-          PERSONAL_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
-        run: |
-          set -x          
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"          
-          VERSION="v-test-$(date +'%Y%m%d%H%M%S')"
-          git tag $VERSION
-          #git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}
-          git remote set-url origin https://OGarnon:${PERSONAL_TOKEN}@github.com/OGarnon/wildutils-python.git
-          git push origin $VERSION
-
   build-and-publish:
-    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
 
     steps:
@@ -49,13 +24,7 @@ jobs:
       - name: Build Docker Image
         run: docker build -t wildutils-python-app:test .
 
-      - name: Extract tag version
-        id: get_tag
-        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-
-      - name: Push Docker Image with version
+      - name: Push Docker Image (latest tag)
         run: |
-          #docker tag wildutils-python-app:test ogranon/wildutils-python-app:${{ steps.get_tag.outputs.TAG }}
-          #docker push ogranon/wildutils-python-app:${{ steps.get_tag.outputs.TAG }}
           docker tag wildutils-python-app:test ogranon/wildutils-python-app:latest
           docker push ogranon/wildutils-python-app:latest
